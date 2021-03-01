@@ -12,6 +12,13 @@ from jukebox.save_html import save_html
 from jukebox.utils.sample_utils import split_batch, get_starts
 from jukebox.utils.dist_utils import print_once
 import fire
+import os
+from glob import glob
+
+from termcolor import colored
+from datetime import datetime
+
+newtosample = True
 
 # Sample a partial window of length<n_ctx with tokens_to_sample new tokens on level=level
 def sample_partial_window(zs, labels, sampling_kwargs, level, prior, tokens_to_sample, hps):
@@ -45,6 +52,8 @@ def sample_single_window(zs, labels, sampling_kwargs, level, prior, start, hps):
 
     print_once(f"Sampling {sample_tokens} tokens for [{start},{start+sample_tokens}]. Conditioning on {conditioning_tokens} tokens")
 
+    global newtosample
+    newtosample = (new_tokens > 0)
     if new_tokens <= 0:
         # Nothing new to sample
         return zs
@@ -81,8 +90,25 @@ def sample_single_window(zs, labels, sampling_kwargs, level, prior, start, hps):
 def sample_level(zs, labels, sampling_kwargs, level, prior, total_length, hop_length, hps):
     print_once(f"Sampling level {level}")
     if total_length >= prior.n_ctx:
-        for start in get_starts(total_length, prior.n_ctx, hop_length):
-            zs = sample_single_window(zs, labels, sampling_kwargs, level, prior, start, hps)
+        starts = get_starts(total_length, prior.n_ctx, hop_length)
+        counterr = 0
+        x = None
+        for start in starts:
+            counterr += 1
+            datea = datetime.now()		
+            zs = sample_single_window(zs, labels, sampling_kwargs, level, prior, start, hps)			
+            if newtosample and counterr < len(starts):
+                del x; x = None; prior.cpu(); empty_cache()
+                x = prior.decode(zs[level:], start_level=level, bs_chunks=zs[level].shape[0])
+                logdir = f"{hps.name}/level_{level}"
+                if not os.path.exists(logdir):
+                    os.makedirs(logdir)
+                t.save(dict(zs=zs, labels=labels, sampling_kwargs=sampling_kwargs, x=x), f"{logdir}/data.pth.tar")
+                save_wav(logdir, x, hps.sr)
+                del x; prior.cuda(); empty_cache(); x = None
+            dateb = datetime.now()
+            timex = ((dateb-datea).total_seconds()/60.0)*(len(starts)-counterr)
+            print(f"Step " + colored(counterr,'blue') + "/" + colored( len(starts),'red') + " ~ New to Sample: " + str(newtosample) + " ~ estimated remaining minutes: " + (colored('???','yellow'), colored(timex,'magenta'))[counterr > 1 and newtosample])
     else:
         zs = sample_partial_window(zs, labels, sampling_kwargs, level, prior, total_length, hps)
     return zs
@@ -115,9 +141,19 @@ def _sample(zs, labels, sampling_kwargs, priors, sample_levels, hps):
             os.makedirs(logdir)
         t.save(dict(zs=zs, labels=labels, sampling_kwargs=sampling_kwargs, x=x), f"{logdir}/data.pth.tar")
         save_wav(logdir, x, hps.sr)
-        if alignments is None and priors[-1] is not None and priors[-1].n_tokens > 0 and not isinstance(priors[-1].labeller, EmptyLabeller):
-            alignments = get_alignment(x, zs, labels[-1], priors[-1], sampling_kwargs[-1]['fp16'], hps)
-        save_html(logdir, x, zs, labels[-1], alignments, hps)
+        #if alignments is None and priors[-1] is not None and priors[-1].n_tokens > 0 and not isinstance(priors[-1].labeller, EmptyLabeller):
+            #alignments = get_alignment(x, zs, labels[-1], priors[-1], sampling_kwargs[-1]['fp16'], hps)
+        lepath=hps.name
+        if level==2:
+          for filex in glob(os.path.join(lepath + '/level_2','item_*.wav')):
+            os.rename(filex,filex.replace('item_',lepath.split('/')[-1] + '-'))
+        if level==1:
+          for filex in glob(os.path.join(lepath + '/level_1','item_*.wav')):
+            os.rename(filex,filex.replace('item_',lepath.split('/')[-1] + '-L1-'))
+        if level==0:
+          for filex in glob(os.path.join(lepath + '/level_0','item_*.wav')):
+            os.rename(filex,filex.replace('item_',lepath.split('/')[-1] + '-L0-'))
+        #save_html(logdir, x, zs, labels[-1], alignments, hps)
     return zs
 
 # Generate ancestral samples given a list of artists and genres
