@@ -12,4 +12,4 @@ Code for "Jukebox: A Generative Model for Music"
 # Forked from deeplearn-art
 https://github.com/deeplearn-art/jukebox
 
-this included changes to make saving / checkpoints possible including Zag's sample.py
+this included changes to make saving checkpoints possible, including Zag's sample.py
