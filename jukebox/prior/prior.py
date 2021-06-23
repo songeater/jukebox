@@ -241,8 +241,8 @@ class SimplePrior(nn.Module):
     # this one interpolates the y_cond with the second set of artist/genre
     def get_interpolated_y_cond(self, y_cond):
         print("got to beg of interpolated y")
-        second_artist = "Leonard Cohen" #self.sec_art if self.sec_art else "Leonard Cohen"
-        second_genre = "Blues" #self.sec_gen if self.sec_gen else "Blues"
+        second_artist = "Aretha Franklin" #self.sec_art if self.sec_art else "Leonard Cohen"
+        second_genre = "Jazz" #self.sec_gen if self.sec_gen else "Blues"
         second_weight = .5 #self.sec_wgt if self.sec_wgt else .5
         second_metas = [dict(artist = second_artist,
                           genre = second_genre,
@@ -253,11 +253,10 @@ class SimplePrior(nn.Module):
         ] * y_cond.cpu().detach().numpy().shape[0]
         second_labels = [None, None, self.labeller.get_batch_labels(second_metas, 'cuda')]
         second_y = self.get_y(second_labels[2],0)
- 
         n_labels = second_y.shape[1] - self.n_tokens
         second_y = second_y[:, :n_labels]
         print('Second Y size', second_y.size())
-        second_y_cond, _ = self.y_emb(second_y)
+        second_y_cond, second_y_pos = self.y_emb(second_y)
         y_cond = second_y_cond * second_weight + y_cond * (1.0 - second_weight)
         return y_cond
 
