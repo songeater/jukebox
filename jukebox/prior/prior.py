@@ -256,7 +256,7 @@ class SimplePrior(nn.Module):
         n_labels = second_y.shape[1] - self.n_tokens
         second_y = second_y[:, :n_labels]
         print('Second Y size', second_y.size())
-        second_y_cond, _ = self.second_y_emb(second_y)
+        second_y_cond, _ = self.y_emb(second_y)
         y_cond = second_y_cond * second_weight + y_cond * (1.0 - second_weight)
         return y_cond
 
