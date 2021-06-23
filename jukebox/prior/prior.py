@@ -230,7 +230,34 @@ class SimplePrior(nn.Module):
         with t.no_grad():
             x_out = self.decoder(zs, start_level=start_level, end_level=end_level, bs_chunks=bs_chunks)
         return x_out
+    
+    # -----songeater: new/changed functions-----
+    # this one needs to be called from main script/notebook to pass the second artist/genre
+    def second_art_gen(self, second_artist=None, second_genre=None, second_weight=0):
+        self.sec_art = second_artist 
+        self.sec_gen = second_genre
+        self.sec_wgt = second_weight    
 
+    # this one interpolates the y_cond with the second set of artist/genre
+    def get_interpolated_y_cond(self, y_cond):
+        print("got to beg of interpolated y")
+        second_artist = self.sec_art if self.sec_art else "Leonard Cohen"
+        second_genre = self.sec_gen if self.sec_gen else "Blues"
+        second_weight = self.sec_wgt if self.sec_wgt else .5
+        second_metas = [dict(artist = second_artist,
+                          genre = second_genre,
+                          total_length = self.sample_length,
+                          offset = 0,
+                          lyrics = "",
+          ),
+        ] * y_cond.cpu().detach().numpy().shape([0])
+        second_labels = [None, None, self.labeller.get_batch_labels(second_metas, 'cuda')]
+        second_y = self.get_y(second_labels,0)
+        second_y_cond, _ = self.y_emb(second_y)
+        y_cond = second_y_cond * second_weight + y_cond * (1.0 - second_weight)
+        return y_cond
+
+    # this one remains mostly the same, except for one added call
     def get_cond(self, z_conds, y):
         if y is not None:
             assert y.shape[1] == 4 + self.y_emb.max_bow_genre_size + self.n_tokens, f"Expected {4} + {self.y_emb.max_bow_genre_size} + {self.n_tokens}, got {y.shape[1]}"
@@ -239,8 +266,14 @@ class SimplePrior(nn.Module):
         else:
             y, prime = None, None
         y_cond, y_pos = self.y_emb(y) if self.y_cond else (None, None)
+        
+        # ----- songeater: only change to main code-branch -----
+        y_cond = self.get_interpolated_y_cond(y_cond)
+        # ----- songeater: only change to main code-branch ends -----
+        
         x_cond = self.x_emb(z_conds) if self.x_cond else y_pos
         return x_cond, y_cond, prime
+    # -----songeater: end of new/changed functions-----
 
     def sample(self, n_samples, z=None, z_conds=None, y=None, fp16=False, temp=1.0, top_k=0, top_p=0.0,
                chunk_size=None, sample_tokens=None):
