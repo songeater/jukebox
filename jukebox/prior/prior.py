@@ -250,7 +250,7 @@ class SimplePrior(nn.Module):
                           offset = 0,
                           lyrics = "",
           ),
-        ] * y_cond.cpu().detach().numpy().shape([0])
+        ] * y_cond.cpu().detach().numpy().shape[0]
         second_labels = [None, None, self.labeller.get_batch_labels(second_metas, 'cuda')]
         second_y = self.get_y(second_labels,0)
         second_y_cond, _ = self.y_emb(second_y)
