@@ -253,6 +253,8 @@ class SimplePrior(nn.Module):
         ] * y_cond.cpu().detach().numpy().shape[0]
         second_labels = [None, None, self.labeller.get_batch_labels(second_metas, 'cuda')]
         second_y = self.get_y(second_labels[2],0)
+        n_labels = second_y.shape[1] - self.n_tokens
+        second_y = second_y[:, :n_labels]
         second_y_cond, _ = self.y_emb(second_y)
         y_cond = second_y_cond * second_weight + y_cond * (1.0 - second_weight)
         return y_cond
