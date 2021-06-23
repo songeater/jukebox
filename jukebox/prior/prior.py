@@ -76,6 +76,7 @@ class SimplePrior(nn.Module):
         if self.y_cond:
             self.n_time = self.z_shape[0] # Assuming STFT=TF order and raw=T1 order, so T is first dim
             self.y_emb = LabelConditioner(n_time=self.n_time,include_time_signal=not self.x_cond,**y_cond_kwargs)
+            self.second_y_emb = LabelConditioner(n_time=self.n_time,include_time_signal=not self.x_cond,**y_cond_kwargs)
 
         # Lyric conditioning
         if single_enc_dec:
@@ -256,7 +257,7 @@ class SimplePrior(nn.Module):
         n_labels = second_y.shape[1] - self.n_tokens
         second_y = second_y[:, :n_labels]
         print('Second Y size', second_y.size())
-        second_y_cond, _ = self.y_emb(second_y, include_time_signal = False)
+        second_y_cond, _ = self.second_y_emb(second_y)
         y_cond = second_y_cond * second_weight + y_cond * (1.0 - second_weight)
         return y_cond
 
