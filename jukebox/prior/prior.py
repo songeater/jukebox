@@ -243,7 +243,6 @@ class SimplePrior(nn.Module):
 
     # this one interpolates the y_cond with the second set of artist/genre
     def get_interpolated_y_cond(self, y_cond):
-        print("got to beg of interpolated y")
         second_artist, second_genre, second_weight = self.get_second_art_gen()
         second_metas = [dict(artist = second_artist,
                           genre = second_genre,
@@ -256,7 +255,6 @@ class SimplePrior(nn.Module):
         second_y = self.get_y(second_labels[2],0)
         n_labels = second_y.shape[1] - self.n_tokens
         second_y = second_y[:, :n_labels]
-        print('Second Y size', second_y.size())
         y_emb_time_signal = self.y_emb.include_time_signal
         self.y_emb.include_time_signal = False
         second_y_cond, _ = self.y_emb(second_y)
@@ -275,7 +273,6 @@ class SimplePrior(nn.Module):
         y_cond, y_pos = self.y_emb(y) if self.y_cond else (None, None)
         
         # ----- songeater: only change to main code-branch -----
-        print('Y size:', y.size())
         y_cond = self.get_interpolated_y_cond(y_cond)
         # ----- songeater: only change to main code-branch ends -----
         
