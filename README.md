@@ -13,3 +13,9 @@ Code for "Jukebox: A Generative Model for Music"
 https://github.com/deeplearn-art/jukebox
 
 this included changes to make saving checkpoints possible, including Zag's sample.py
+
+# Linear Interpolation of second artist/genre style embeddings
+
+As shown in https://github.com/openai/jukebox/issues/17
+Prior.py was amended, and the second artist/genre can be passed from the Colab notebook
+
