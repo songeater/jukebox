@@ -232,18 +232,19 @@ class SimplePrior(nn.Module):
         return x_out
     
     # -----songeater: new/changed functions-----
-    # this one needs to be called from main script/notebook to pass the second artist/genre
-    #def second_art_gen(self, second_artist=None, second_genre=None, second_weight=0):
-    #    self.sec_art = second_artist 
-    #    self.sec_gen = second_genre
-    #    self.sec_wgt = second_weight    
+    # this one needs to be called from main script/notebook to pass the second artist/genre.
+    # Using Zag's method, "cut and paste" the #NEWTEXT line to replace with the artist/genre/weight
+    # or hardcode into the defaults
+    def get_second_art_gen(self, sec_art="Aretha Franklin", 
+                           sec_gen="Blues", 
+                           sec_wgt=0.0):
+        #NEWTEXT gets inserted here
+        return sec_art, sec_gen, sec_wgt        
 
     # this one interpolates the y_cond with the second set of artist/genre
     def get_interpolated_y_cond(self, y_cond):
         print("got to beg of interpolated y")
-        second_artist = "Aretha Franklin" #self.sec_art if self.sec_art else "Leonard Cohen"
-        second_genre = "Jazz" #self.sec_gen if self.sec_gen else "Blues"
-        second_weight = .5 #self.sec_wgt if self.sec_wgt else .5
+        second_artist, second_genre, second_weight = self.get_second_art_gen()
         second_metas = [dict(artist = second_artist,
                           genre = second_genre,
                           total_length = self.sample_length,
