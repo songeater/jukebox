@@ -108,7 +108,7 @@ def sample_level(zs, labels, sampling_kwargs, level, prior, total_length, hop_le
                 del x; prior.cuda(); empty_cache(); x = None
             dateb = datetime.now()
             timex = ((dateb-datea).total_seconds()/60.0)*(len(starts)-counterr)
-            print(f"Step " + colored(counterr,'blue') + "/" + colored( len(starts),'red') + " ~ New to Sample: " + str(newtosample) + " ~ estimated remaining minutes: " + (colored('???','yellow'), colored(timex,'magenta'))[counterr > 1 and newtosample])
+            print(f"Step {colored(counterr,'blue')}/{colored( len(starts),'red')} ~ New to Sample: {str(newtosample)} ~ estimated remaining minutes: {(colored('???','yellow'), colored(timex,'magenta'))[counterr > 1 and newtosample]}")
     else:
         zs = sample_partial_window(zs, labels, sampling_kwargs, level, prior, total_length, hps)
     return zs
